@@ -41,26 +41,25 @@ export class MetricCollector {
     
     const { logger, autoDiscover, metricPrefix, ...bullOpts } = opts;
     this.logger = logger || globalLogger;
-    if(process.env.REDIS_PORT && process.env.REDIS_HOST) {
-      //this.redisUri = redis;
-      this.logger.info("DEFAULT");
-      //this.logger.info("REDIS HOST: ", process.env.REDIS_HOST);
-      this.logger.info("REDIS CONNECTION: ", process.env.REDIS_CONNECTION);
-      //this.logger.info("REDIS PORT: ", process.env.REDIS_PORT);
-      //this.logger.info("REDIS PASSWORD: ", process.env.REDIS_PASSWORD);
-      this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
-      this.redisClient = redis.createClient(process.env.REDIS_CONNECTION,
-        {
-          tls:{
-            ca: process.env.REDIS_CA_CERT
-          }
+    //this.redisUri = redis;
+    this.logger.info("DEFAULT");
+    //this.logger.info("REDIS HOST: ", process.env.REDIS_HOST);
+    this.logger.info("REDIS CONNECTION: ", process.env.REDIS_CONNECTION);
+    //this.logger.info("REDIS PORT: ", process.env.REDIS_PORT);
+    //this.logger.info("REDIS PASSWORD: ", process.env.REDIS_PASSWORD);
+    this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
+    this.redisClient = redis.createClient(process.env.REDIS_CONNECTION,
+      {
+        tls:{
+          ca: process.env.REDIS_CA_CERT
         }
-      );
-      this.redisClient.setMaxListeners(32);
-      this.bullOpts = bullOpts;
-      this.addToQueueSet(queueNames);
-      this.guages = makeGuages(metricPrefix, registers);
-    }
+      }
+    );
+    this.redisClient.setMaxListeners(32);
+    this.bullOpts = bullOpts;
+    this.addToQueueSet(queueNames);
+    this.guages = makeGuages(metricPrefix, registers);
+    
   }
 
   private createClient(_type: 'client' | 'subscriber' | 'bclient'): any {
@@ -75,16 +74,15 @@ export class MetricCollector {
     this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
 
     this.logger.info("REDIS URI: ", this.redisUri);
-    if(process.env.REDIS_PORT && process.env.REDIS_HOST) {
       
-      return redis.createClient(process.env.REDIS_CONNECTION,
-        {
-          tls:{
-            ca: process.env.REDIS_CA_CERT
-          }
+    return redis.createClient(process.env.REDIS_CONNECTION,
+      {
+        tls:{
+          ca: process.env.REDIS_CA_CERT
         }
-      );
-    }
+      }
+    );
+    
   }
 
   private addToQueueSet(names: string[]): void {
