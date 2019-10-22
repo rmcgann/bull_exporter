@@ -41,17 +41,16 @@ export class MetricCollector {
     
     const { logger, autoDiscover, metricPrefix, ...bullOpts } = opts;
     this.logger = logger || globalLogger;
-    if(process.env.REDIS_PORT) {
+    if(process.env.REDIS_PORT && process.env.REDIS_HOST) {
       //this.redisUri = redis;
       this.logger.info("DEFAULT");
-      this.logger.info("REDIS URI: ", this.redisUri);
       this.logger.info("REDIS HOST: ", process.env.REDIS_HOST);
       this.logger.info("REDIS PORT: ", process.env.REDIS_PORT);
       this.logger.info("REDIS PASSWORD: ", process.env.REDIS_PASSWORD);
       this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
       this.redisClient = redis.createClient({
         port: parseInt(process.env.REDIS_PORT),
-        host: process.env.REDIS_HOST,
+        host: process.env.REDIS_HOST.substring(0, process.env.REDIS_HOST.lastIndexOf(":")),
         password: process.env.REDIS_PASSWORD, 
         tls:{
           ca: process.env.REDIS_CA_CERT
@@ -76,11 +75,11 @@ export class MetricCollector {
     this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
 
     this.logger.info("REDIS URI: ", this.redisUri);
-    if(process.env.REDIS_PORT) {
+    if(process.env.REDIS_PORT && process.env.REDIS_HOST) {
       
       return redis.createClient({
         port: parseInt(process.env.REDIS_PORT),
-        host: process.env.REDIS_HOST,
+        host: process.env.REDIS_HOST.substring(0, process.env.REDIS_HOST.lastIndexOf(":")),
         password: process.env.REDIS_PASSWORD, 
         tls:{
           ca: process.env.REDIS_CA_CERT
