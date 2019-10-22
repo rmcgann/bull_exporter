@@ -1,7 +1,8 @@
 import bull from 'bull';
 import * as Logger from 'bunyan';
 import { EventEmitter } from 'events';
-import IoRedis from 'ioredis';
+//import Redis, { RedisClient } from 'redis';
+const redis = require('redis');
 import { register as globalRegister, Registry } from 'prom-client';
 
 import { logger as globalLogger } from './logger';
@@ -9,7 +10,6 @@ import { getJobCompleteStats, getStats, makeGuages, QueueGauges } from './queueG
 
 export interface MetricCollectorOptions extends Omit<bull.QueueOptions, 'redis'> {
   metricPrefix: string;
-  redis: string;
   autoDiscover: boolean;
   logger: Logger;
 }
@@ -23,7 +23,7 @@ export interface QueueData<T = unknown> {
 export class MetricCollector {
 
   private readonly logger: Logger;
-  private readonly defaultRedisClient!: IoRedis.Redis;
+  private readonly redisClient: any;
   private readonly redisUri!: string;
   private readonly bullOpts!: Omit<bull.QueueOptions, 'redis'>;
   private readonly queuesByName: Map<string, QueueData<unknown>> = new Map();
@@ -39,17 +39,17 @@ export class MetricCollector {
     registers: Registry[] = [globalRegister],
   ) {
     
-    const { logger, autoDiscover, redis, metricPrefix, ...bullOpts } = opts;
+    const { logger, autoDiscover, metricPrefix, ...bullOpts } = opts;
     this.logger = logger || globalLogger;
     if(process.env.REDIS_PORT) {
-      this.redisUri = redis;
+      //this.redisUri = redis;
       this.logger.info("DEFAULT");
       this.logger.info("REDIS URI: ", this.redisUri);
       this.logger.info("REDIS HOST: ", process.env.REDIS_HOST);
       this.logger.info("REDIS PORT: ", process.env.REDIS_PORT);
       this.logger.info("REDIS PASSWORD: ", process.env.REDIS_PASSWORD);
       this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
-      this.defaultRedisClient = new IoRedis({
+      this.redisClient = redis.createClient({
         port: parseInt(process.env.REDIS_PORT),
         host: process.env.REDIS_HOST,
         password: process.env.REDIS_PASSWORD, 
@@ -57,17 +57,16 @@ export class MetricCollector {
           ca: process.env.REDIS_CA_CERT
         }
       });
-      this.defaultRedisClient.setMaxListeners(32);
+      this.redisClient.setMaxListeners(32);
       this.bullOpts = bullOpts;
       this.addToQueueSet(queueNames);
       this.guages = makeGuages(metricPrefix, registers);
     }
-    
   }
 
-  private createClient(_type: 'client' | 'subscriber' | 'bclient'): IoRedis.Redis {
+  private createClient(_type: 'client' | 'subscriber' | 'bclient'): any {
     if (_type === 'client') {
-      return this.defaultRedisClient!;
+      return this.redisClient;
     }
     this.logger.info("NOT DEFAULT");
     this.logger.info("REDIS URI: ", this.redisUri);
@@ -79,7 +78,7 @@ export class MetricCollector {
     this.logger.info("REDIS URI: ", this.redisUri);
     if(process.env.REDIS_PORT) {
       
-      return new IoRedis({
+      return redis.createClient({
         port: parseInt(process.env.REDIS_PORT),
         host: process.env.REDIS_HOST,
         password: process.env.REDIS_PASSWORD, 
@@ -88,7 +87,6 @@ export class MetricCollector {
         }
       });
     }
-    return new IoRedis({});
   }
 
   private addToQueueSet(names: string[]): void {
@@ -112,7 +110,7 @@ export class MetricCollector {
     const keyPattern = new RegExp(`^${this.bullOpts.prefix}:([^:]+):(id|failed|active|waiting|stalled-check)$`);
     this.logger.info({ pattern: keyPattern.source }, 'running queue discovery');
 
-    const keyStream = this.defaultRedisClient.scanStream({
+    const keyStream = this.redisClient.scanStream({
       match: `${this.bullOpts.prefix}:*:*`,
     });
     // tslint:disable-next-line:await-promise tslint does not like Readable's here
@@ -153,11 +151,11 @@ export class MetricCollector {
   }
 
   public async ping(): Promise<void> {
-    await this.defaultRedisClient.ping();
+    await this.redisClient.ping();
   }
 
   public async close(): Promise<void> {
-    this.defaultRedisClient.disconnect();
+    this.redisClient.disconnect();
     for (const q of this.queues) {
       for (const l of this.myListeners) {
         (q.queue as any as EventEmitter).removeListener('global:completed', l);

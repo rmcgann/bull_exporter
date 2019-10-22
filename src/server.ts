@@ -58,7 +58,6 @@ export async function makeServer(opts: Options): Promise<express.Application> {
   const collector = new MetricCollector(opts._, {
     logger,
     metricPrefix: opts.metricPrefix,
-    redis: opts.url,
     prefix: opts.prefix,
     autoDiscover: opts.autoDiscover,
   });
@@ -94,7 +93,7 @@ export async function makeServer(opts: Options): Promise<express.Application> {
         res.contentType(promClient.register.contentType);
         res.send(promClient.register.metrics());
       })
-      .catch(err => next(err));
+      .catch((err: any) => next(err));
   });
 
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
