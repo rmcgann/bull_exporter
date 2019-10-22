@@ -48,13 +48,9 @@ export class MetricCollector {
     //this.logger.info("REDIS PORT: ", process.env.REDIS_PORT);
     //this.logger.info("REDIS PASSWORD: ", process.env.REDIS_PASSWORD);
     this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
-    this.redisClient = redis.createClient(process.env.REDIS_CONNECTION,
-      {
-        tls:{
-          ca: process.env.REDIS_CA_CERT
-        }
-      }
-    );
+    let ca = process.env.REDIS_CA_CERT;
+    let tls = { ca };
+    this.redisClient = redis.createClient(process.env.REDIS_CONNECTION, { tls });
     this.redisClient.setMaxListeners(32);
     this.bullOpts = bullOpts;
     this.addToQueueSet(queueNames);
@@ -74,14 +70,9 @@ export class MetricCollector {
     this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
 
     this.logger.info("REDIS URI: ", this.redisUri);
-      
-    return redis.createClient(process.env.REDIS_CONNECTION,
-      {
-        tls:{
-          ca: process.env.REDIS_CA_CERT
-        }
-      }
-    );
+    let ca = process.env.REDIS_CA_CERT;
+    let tls = { ca };
+    return redis.createClient(process.env.REDIS_CONNECTION, { tls });
     
   }
 
