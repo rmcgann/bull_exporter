@@ -12,7 +12,6 @@ export async function printOnce(opts: Options): Promise<void> {
   const collector = new MetricCollector(opts._, {
     logger,
     metricPrefix: opts.metricPrefix,
-    redis: opts.url,
     prefix: opts.prefix,
     autoDiscover: opts.autoDiscover,
   });
