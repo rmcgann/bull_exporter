@@ -108,13 +108,6 @@ export async function makeServer(opts: Options): Promise<express.Application> {
 
 export async function startServer(opts: Options): Promise<{ done: Promise<void> }> {
   logger.info("Starting server");
-  logger.info("REDIS HOST: ", process.env.REDIS_HOST);
-  logger.info("REDIS PORT: ", process.env.REDIS_PORT);
-  logger.info("REDIS PASSWORD: ", process.env.REDIS_PASSWORD);
-  logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
-
-  console.log("BILLY IS KING");
-
   const app = await makeServer(opts);
 
   let server: http.Server;
