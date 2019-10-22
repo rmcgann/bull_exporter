@@ -23,40 +23,72 @@ export interface QueueData<T = unknown> {
 export class MetricCollector {
 
   private readonly logger: Logger;
-
-  private readonly defaultRedisClient: IoRedis.Redis;
-  private readonly redisUri: string;
-  private readonly bullOpts: Omit<bull.QueueOptions, 'redis'>;
+  private readonly defaultRedisClient!: IoRedis.Redis;
+  private readonly redisUri!: string;
+  private readonly bullOpts!: Omit<bull.QueueOptions, 'redis'>;
   private readonly queuesByName: Map<string, QueueData<unknown>> = new Map();
-
   private get queues(): QueueData<unknown>[] {
     return [...this.queuesByName.values()];
   }
-
   private readonly myListeners: Set<(id: string) => Promise<void>> = new Set();
-
-  private readonly guages: QueueGauges;
+  private readonly guages!: QueueGauges;
 
   constructor(
     queueNames: string[],
     opts: MetricCollectorOptions,
     registers: Registry[] = [globalRegister],
   ) {
+    
     const { logger, autoDiscover, redis, metricPrefix, ...bullOpts } = opts;
-    this.redisUri = redis;
-    this.defaultRedisClient = new IoRedis(this.redisUri);
-    this.defaultRedisClient.setMaxListeners(32);
-    this.bullOpts = bullOpts;
     this.logger = logger || globalLogger;
-    this.addToQueueSet(queueNames);
-    this.guages = makeGuages(metricPrefix, registers);
+    if(process.env.REDIS_PORT) {
+      this.redisUri = redis;
+      this.logger.info("DEFAULT");
+      this.logger.info("REDIS URI: ", this.redisUri);
+      this.logger.info("REDIS HOST: ", process.env.REDIS_HOST);
+      this.logger.info("REDIS PORT: ", process.env.REDIS_PORT);
+      this.logger.info("REDIS PASSWORD: ", process.env.REDIS_PASSWORD);
+      this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
+      this.defaultRedisClient = new IoRedis({
+        port: parseInt(process.env.REDIS_PORT),
+        host: process.env.REDIS_HOST,
+        password: process.env.REDIS_PASSWORD, 
+        tls:{
+          ca: process.env.REDIS_CA_CERT
+        }
+      });
+      this.defaultRedisClient.setMaxListeners(32);
+      this.bullOpts = bullOpts;
+      this.addToQueueSet(queueNames);
+      this.guages = makeGuages(metricPrefix, registers);
+    }
+    
   }
 
-  private createClient(_type: 'client' | 'subscriber' | 'bclient', redisOpts?: IoRedis.RedisOptions): IoRedis.Redis {
+  private createClient(_type: 'client' | 'subscriber' | 'bclient'): IoRedis.Redis {
     if (_type === 'client') {
       return this.defaultRedisClient!;
     }
-    return new IoRedis(this.redisUri, redisOpts);
+    this.logger.info("NOT DEFAULT");
+    this.logger.info("REDIS URI: ", this.redisUri);
+    this.logger.info("REDIS HOST: ", process.env.REDIS_HOST);
+    this.logger.info("REDIS PORT: ", process.env.REDIS_PORT);
+    this.logger.info("REDIS PASSWORD: ", process.env.REDIS_PASSWORD);
+    this.logger.info("REDIS CA: ", process.env.REDIS_CA_CERT);
+
+    this.logger.info("REDIS URI: ", this.redisUri);
+    if(process.env.REDIS_PORT) {
+      
+      return new IoRedis({
+        port: parseInt(process.env.REDIS_PORT),
+        host: process.env.REDIS_HOST,
+        password: process.env.REDIS_PASSWORD, 
+        tls:{
+          ca: process.env.REDIS_CA_CERT
+        }
+      });
+    }
+    return new IoRedis({});
   }
 
   private addToQueueSet(names: string[]): void {
