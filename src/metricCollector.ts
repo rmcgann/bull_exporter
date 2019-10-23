@@ -98,9 +98,7 @@ export class MetricCollector {
     const keyPattern = new RegExp(`^${this.bullOpts.prefix}:([^:]+):(id|failed|active|waiting|stalled-check)$`);
     this.logger.info({ pattern: keyPattern.source }, 'running queue discovery');
 
-    /*const keyStream = this.redisClient.scanStream({
-      match: `${this.bullOpts.prefix}:*:*`,
-    });
+    const keyStream = await this.redisClient.scan("0", "MATCH", `${this.bullOpts.prefix}:*:*`, "COUNT", "1000");
     // tslint:disable-next-line:await-promise tslint does not like Readable's here
     for await (const keyChunk of keyStream) {
       for (const key of keyChunk) {
@@ -109,7 +107,7 @@ export class MetricCollector {
           this.addToQueueSet([match[1]]);
         }
       }
-    }*/
+    }
   }
 
   private async onJobComplete(queue: QueueData, id: string): Promise<void> {
@@ -143,7 +141,7 @@ export class MetricCollector {
   }
 
   public async close(): Promise<void> {
-    //this.redisClient.disconnect();
+    this.redisClient.end(true);
     for (const q of this.queues) {
       for (const l of this.myListeners) {
         (q.queue as any as EventEmitter).removeListener('global:completed', l);
