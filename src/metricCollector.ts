@@ -46,7 +46,7 @@ export class MetricCollector {
     this.redisUri = redis;
     let ca = process.env.REDIS_CA_CERT;
     let tls = { ca };
-    this.defaultRedisClient = new IoRedis(process.env.REDIS_HOST, { tls });
+    this.defaultRedisClient =  new IoRedis(process.env.REDIS_CONNECTION, { tls });
     this.defaultRedisClient.setMaxListeners(32);
     this.bullOpts = bullOpts;
     this.logger = logger || globalLogger;
@@ -59,7 +59,9 @@ export class MetricCollector {
     if (_type === 'client') {
       return this.defaultRedisClient!;
     }
-    return new IoRedis(this.redisUri, redisOpts);
+    let ca = process.env.REDIS_CA_CERT;
+    let tls = { ca };
+    return new IoRedis(process.env.REDIS_CONNECTION, { tls });
   }
 
   private addToQueueSet(names: string[]): void {
