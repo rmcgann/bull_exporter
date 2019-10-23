@@ -1,7 +1,7 @@
 import bull from 'bull';
 import * as Logger from 'bunyan';
 import { EventEmitter } from 'events';
-//import Redis, { RedisClient } from 'redis';
+import Redis from 'redis';
 const redis = require('redis');
 import { register as globalRegister, Registry } from 'prom-client';
 
@@ -23,7 +23,7 @@ export interface QueueData<T = unknown> {
 export class MetricCollector {
 
   private readonly logger: Logger;
-  private readonly redisClient: any;
+  private readonly redisClient: Redis.RedisClient;
   private readonly redisUri!: string;
   private readonly bullOpts!: Omit<bull.QueueOptions, 'redis'>;
   private readonly queuesByName: Map<string, QueueData<unknown>> = new Map();
@@ -98,7 +98,7 @@ export class MetricCollector {
     const keyPattern = new RegExp(`^${this.bullOpts.prefix}:([^:]+):(id|failed|active|waiting|stalled-check)$`);
     this.logger.info({ pattern: keyPattern.source }, 'running queue discovery');
 
-    const keyStream = this.redisClient.scanStream({
+    /*const keyStream = this.redisClient.scanStream({
       match: `${this.bullOpts.prefix}:*:*`,
     });
     // tslint:disable-next-line:await-promise tslint does not like Readable's here
@@ -109,7 +109,7 @@ export class MetricCollector {
           this.addToQueueSet([match[1]]);
         }
       }
-    }
+    }*/
   }
 
   private async onJobComplete(queue: QueueData, id: string): Promise<void> {
@@ -143,7 +143,7 @@ export class MetricCollector {
   }
 
   public async close(): Promise<void> {
-    this.redisClient.disconnect();
+    //this.redisClient.disconnect();
     for (const q of this.queues) {
       for (const l of this.myListeners) {
         (q.queue as any as EventEmitter).removeListener('global:completed', l);
