@@ -36,6 +36,7 @@
     "bull": "^3.6.0",
     "bunyan": "^1.8.12",
     "express": "^4.16.4",
+    "node-redis-scan": "^1.0.3",
     "prom-client": "^11.2.1",
     "redis": "^2.8.0",
     "tslib": "^1.9.3",
