@@ -99,13 +99,14 @@ export class MetricCollector {
     const keyPattern = new RegExp(`^${this.bullOpts.prefix}:([^:]+):(id|failed|active|waiting|stalled-check)$`);
     this.logger.info({ pattern: keyPattern.source }, 'running queue discovery');
     const scanner = new redisScan(this.redisClient);
-    scanner.scan('bull:*:*', (err:Error, matchingKeys: String[]) => {
-      if(err){
-        throw(err);
+    scanner.eachScan('bull:*:*', (matchingKeys: String[]) => {
+      if(matchingKeys.length) {
+        this.logger.info("KEY MATCH", matchingKeys);
       }
-      this.logger.info("KEYS", matchingKeys);
+      this.logger.info("Empty match");
+      
     });
-
+    this.logger.info("Finished queue discovery");
     // const keyStream = await this.redisClient.scan("0", "MATCH", `${this.bullOpts.prefix}:*:*`, "COUNT", "1000");
     // // tslint:disable-next-line:await-promise tslint does not like Readable's here
     // for await (const keyChunk of keyStream) {
