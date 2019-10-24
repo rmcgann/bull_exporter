@@ -58,6 +58,8 @@ export class MetricCollector {
     this.bullOpts = bullOpts;
     this.addToQueueSet(queueNames);
     this.guages = makeGuages(metricPrefix, registers);
+
+    this.logger.info("PINGING...", this.redisClient.ping());
     
   }
 
