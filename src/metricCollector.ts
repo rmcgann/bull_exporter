@@ -3,6 +3,7 @@ import * as Logger from 'bunyan';
 import { EventEmitter } from 'events';
 import Redis from 'redis';
 const redis = require('redis');
+const redisScan = require('node-redis-scan');
 import { register as globalRegister, Registry } from 'prom-client';
 
 import { logger as globalLogger } from './logger';
@@ -97,17 +98,24 @@ export class MetricCollector {
   public async discoverAll(): Promise<void> {
     const keyPattern = new RegExp(`^${this.bullOpts.prefix}:([^:]+):(id|failed|active|waiting|stalled-check)$`);
     this.logger.info({ pattern: keyPattern.source }, 'running queue discovery');
-
-    const keyStream = await this.redisClient.scan("0", "MATCH", `${this.bullOpts.prefix}:*:*`, "COUNT", "1000");
-    // tslint:disable-next-line:await-promise tslint does not like Readable's here
-    for await (const keyChunk of keyStream) {
-      for (const key of keyChunk) {
-        const match = keyPattern.exec(key);
-        if (match && match[1]) {
-          this.addToQueueSet([match[1]]);
-        }
+    const scanner = new redisScan(this.redisClient);
+    scanner.scan('bull:*:*', (err:Error, matchingKeys: String[]) => {
+      if(err){
+        throw(err);
       }
-    }
+      this.logger.info("KEYS", matchingKeys);
+    });
+
+    // const keyStream = await this.redisClient.scan("0", "MATCH", `${this.bullOpts.prefix}:*:*`, "COUNT", "1000");
+    // // tslint:disable-next-line:await-promise tslint does not like Readable's here
+    // for await (const keyChunk of keyStream) {
+    //   for (const key of keyChunk) {
+    //     const match = keyPattern.exec(key);
+    //     if (match && match[1]) {
+    //       this.addToQueueSet([match[1]]);
+    //     }
+    //   }
+    // }
   }
 
   private async onJobComplete(queue: QueueData, id: string): Promise<void> {
