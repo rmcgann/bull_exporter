@@ -25,7 +25,6 @@ export class MetricCollector {
   private readonly logger: Logger;
 
   private readonly defaultRedisClient: IoRedis.Redis;
-  private readonly redisUri: string;
   private readonly bullOpts: Omit<bull.QueueOptions, 'redis'>;
   private readonly queuesByName: Map<string, QueueData<unknown>> = new Map();
 
@@ -43,7 +42,6 @@ export class MetricCollector {
     registers: Registry[] = [globalRegister],
   ) {
     const { logger, autoDiscover, redis, metricPrefix, ...bullOpts } = opts;
-    this.redisUri = redis;
     // let ca = process.env.REDIS_CA_CERT;
     // let tls = { ca };
     let parsedPort;
@@ -66,12 +64,11 @@ export class MetricCollector {
     this.defaultRedisClient.setMaxListeners(32);
     this.bullOpts = bullOpts;
     this.logger = logger || globalLogger;
-    this.logger.info("REDIS URI ", this.redisUri)
     this.addToQueueSet(queueNames);
     this.guages = makeGuages(metricPrefix, registers);
   }
 
-  private createClient(_type: 'client' | 'subscriber' | 'bclient', redisOpts?: IoRedis.RedisOptions): IoRedis.Redis {
+  private createClient(_type: 'client' | 'subscriber' | 'bclient'): IoRedis.Redis {
     if (_type === 'client') {
       return this.defaultRedisClient!;
     }
