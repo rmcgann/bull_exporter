@@ -44,9 +44,25 @@ export class MetricCollector {
   ) {
     const { logger, autoDiscover, redis, metricPrefix, ...bullOpts } = opts;
     this.redisUri = redis;
-    let ca = process.env.REDIS_CA_CERT;
-    let tls = { ca };
-    this.defaultRedisClient =  new IoRedis(process.env.REDIS_CONNECTION, { tls });
+    // let ca = process.env.REDIS_CA_CERT;
+    // let tls = { ca };
+    let parsedPort;
+    if(process.env.REDIS_PORT) {
+      parsedPort = parseInt(process.env.REDIS_PORT)
+    } else {
+      parsedPort = 0;
+    }
+    let options = {
+      host: process.env.REDIS_HOST,
+      port: parsedPort,
+      password: process.env.REDIS_PASSWORD,
+      rejectUnauthorized: false,
+      tls: {
+        ca: process.env.REDIS_CA_CERT,
+        rejectUnauthorized: false
+      }
+    }
+    this.defaultRedisClient =  new IoRedis(options);
     this.defaultRedisClient.setMaxListeners(32);
     this.bullOpts = bullOpts;
     this.logger = logger || globalLogger;
@@ -59,9 +75,23 @@ export class MetricCollector {
     if (_type === 'client') {
       return this.defaultRedisClient!;
     }
-    let ca = process.env.REDIS_CA_CERT;
-    let tls = { ca };
-    return new IoRedis(process.env.REDIS_CONNECTION, { tls });
+    let parsedPort;
+    if(process.env.REDIS_PORT) {
+      parsedPort = parseInt(process.env.REDIS_PORT)
+    } else {
+      parsedPort = 0;
+    }
+    let options = {
+      host: process.env.REDIS_HOST,
+      port: parsedPort,
+      password: process.env.REDIS_PASSWORD,
+      rejectUnauthorized: false,
+      tls: {
+        ca: process.env.REDIS_CA_CERT,
+        rejectUnauthorized: false
+      }
+    }
+    return new IoRedis(options);
   }
 
   private addToQueueSet(names: string[]): void {
